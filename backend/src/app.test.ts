@@ -11,12 +11,13 @@ import {
 jest.unstable_mockModule("./db/prisma.js", () => ({
   prisma: {
     user: {
-      findMany: jest.fn(),
-      create: jest.fn(),
+      findMany: jest.fn() as jest.MockedFunction<() => Promise<any[]>>,
+      create: jest.fn() as jest.MockedFunction<() => Promise<any>>,
     },
     $disconnect: jest.fn(),
   },
 }));
+
 
 const { createApp } = await import("./app.js");
 const { prisma } = await import("./db/prisma.js");
