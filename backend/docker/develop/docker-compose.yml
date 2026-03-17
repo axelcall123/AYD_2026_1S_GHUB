@@ -4,11 +4,10 @@ services:
       context: ../../
       dockerfile: docker/local/Dockerfile
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      PORT: ${PORT}
     ports:
-      - "3000:3000"
+      - "${PORT}:3000"
     volumes:
       - ../../src:/app/src
       - ../../prisma:/app/prisma
@@ -16,7 +15,7 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+    command: sh -c "npx prisma migrate deploy && node dist/index.js"
 
   db:
     image: postgres:17-alpine
