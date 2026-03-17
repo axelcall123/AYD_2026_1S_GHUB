@@ -81,7 +81,7 @@ jobs:
         run: docker compose -f backend/docker/develop/docker-compose.yml down || true
 
       - name: Start containers
-        run: docker compose -f backend/docker/develop/docker-compose.yml up -d
+        run: docker compose --env-file backend/.env -f backend/docker/local/docker-compose.yml up -d
 
       - name: Cleanup images
         run: docker image prune -f
