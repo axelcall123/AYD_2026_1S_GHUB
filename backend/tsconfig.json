@@ -8,6 +8,8 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "types": ["jest", "node"],
+    "outDir": "dist",
   },
-  "include": ["src", "**/*.test.ts"],
+  "include": ["src"],
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.spec.ts"],
 }
