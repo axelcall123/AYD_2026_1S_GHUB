@@ -8,20 +8,23 @@ import {
   expect,
 } from "@jest/globals";
 
+// integracion
 jest.unstable_mockModule("./db/prisma.js", () => ({
   prisma: {
     user: {
-      findMany: jest.fn() as jest.MockedFunction<() => Promise<any[]>>,
-      create: jest.fn() as jest.MockedFunction<() => Promise<any>>,
+      findMany: jest.fn(),
+      create: jest.fn(),
     },
     $disconnect: jest.fn(),
   },
 }));
 
-
 const { createApp } = await import("./app.js");
 const { prisma } = await import("./db/prisma.js");
 import request from "supertest";
+
+const mockFindMany = jest.mocked(prisma.user.findMany);
+const mockCreate = jest.mocked(prisma.user.create);
 
 const app = createApp();
 
@@ -41,35 +44,56 @@ afterAll(async () => {
 describe("App", () => {
   describe("Rutas", () => {
     test("GET /api/users debe retornar lista de usuarios", async () => {
-      const mockUsers = [
-        { id: "1", name: "Alice", email: "alice@test.com" },
-        { id: "2", name: "Bob", email: "bob@test.com" },
+      const createdAt = new Date(); // Date para el mock de Prisma
+
+      const dbUsers = [
+        { id: "1", name: "Alice", email: "alice@test.com", createdAt },
+        { id: "2", name: "Bob", email: "bob@test.com", createdAt },
       ];
-      (prisma.user.findMany as jest.Mock).mockResolvedValue(mockUsers);
+
+      mockFindMany.mockResolvedValue(dbUsers);
+
+      const expectedBody = dbUsers.map((u) => ({
+        ...u,
+        createdAt: createdAt.toISOString(),
+      }));
+
       const res = await request(app).get("/api/users");
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockUsers);
+      expect(res.body).toEqual(expectedBody);
     });
 
     test("POST /api/users debe crear un usuario", async () => {
-      const mockUser = { id: "3", name: "Carol", email: "carol@test.com" };
-      (prisma.user.create as jest.Mock).mockResolvedValue(mockUser);
+      const createdAt = new Date();
+
+      const dbUser = {
+        id: "3",
+        name: "Carol",
+        email: "carol@test.com",
+        createdAt,
+      };
+
+      mockCreate.mockResolvedValue(dbUser);
+
+      const expectedBody = { ...dbUser, createdAt: createdAt.toISOString() };
+
       const res = await request(app)
         .post("/api/users")
         .send({ name: "Carol", email: "carol@test.com" })
         .set("Content-Type", "application/json");
+
       expect(res.status).toBe(201);
-      expect(res.body).toEqual(mockUser);
+      expect(res.body).toEqual(expectedBody);
     });
 
     test("POST /api/users debe retornar 500 si Prisma falla", async () => {
-      (prisma.user.create as jest.Mock).mockRejectedValue(
-        new Error("DB error"),
-      );
+      mockCreate.mockRejectedValue(new Error("DB error"));
+
       const res = await request(app)
         .post("/api/users")
         .send({ name: "Fail", email: "fail@test.com" })
         .set("Content-Type", "application/json");
+
       expect(res.status).toBe(500);
     });
 
@@ -86,7 +110,8 @@ describe("App", () => {
 
   describe("Headers de seguridad básicos", () => {
     test("no debe exponer X-Powered-By", async () => {
-      (prisma.user.findMany as jest.Mock).mockResolvedValue([]);
+      mockFindMany.mockResolvedValue([]);
+
       const res = await request(app).get("/api/users");
       expect(res.headers["x-powered-by"]).toBeUndefined();
     });
