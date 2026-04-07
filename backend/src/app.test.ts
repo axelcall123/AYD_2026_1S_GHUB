@@ -91,7 +91,7 @@ describe("App", () => {
       expect(res.status).toBe(201);
       expect(res.body).toEqual(expectedBody);
     });
-
+    /* */
     test("POST /api/users debe retornar 500 si Prisma falla", async () => {
       mockCreate.mockRejectedValue(new Error("DB error"));
 
