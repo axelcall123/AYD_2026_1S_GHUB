@@ -8,7 +8,9 @@ import {
   expect,
 } from "@jest/globals";
 
-// integracion
+// Integracion( tip mas mocks(mas depedencias/servicios))
+//Mockea el módulo prisma.js
+//También mockea $disconnect para evitar conexiones reales.
 jest.unstable_mockModule("./db/prisma.js", () => ({
   prisma: {
     user: {
@@ -19,6 +21,7 @@ jest.unstable_mockModule("./db/prisma.js", () => ({
   },
 }));
 
+//Importa dinámicamente la app y el prisma mockeado
 const { createApp } = await import("./app.js");
 const { prisma } = await import("./db/prisma.js");
 import request from "supertest";
@@ -28,14 +31,17 @@ const mockCreate = jest.mocked(prisma.user.create);
 
 const app = createApp();
 
+//Tipa los mocks para tener autocompletado y verificación de tipos
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
+//Silencia los errores de consola para que no ensucien la salida de pruebas
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
+//Reinicia los mocks antes de cada prueba
 afterAll(async () => {
   jest.restoreAllMocks();
   await prisma.$disconnect();
@@ -52,7 +58,7 @@ describe("App", () => {
       ];
 
       mockFindMany.mockResolvedValue(dbUsers);
-
+      //Simula que prisma.user.findMany resuelve con dos usuarios.
       const expectedBody = dbUsers.map((u) => ({
         ...u,
         createdAt: createdAt.toISOString(),
